@@ -1,0 +1,83 @@
+{
+  "description": "gentoo template",
+  "variables": {
+    "guest_os_type": null,
+    "iso_url": null,
+    "iso_checksum": null,
+    "iso_checksum_type": null,
+    "timezone": "UTC",
+    "sync_server": "",
+    "stage3_file": null,
+    "stage3_dest": "/tmp/stage3.tar.bz2",
+    "http_directory": "http/gentoo",
+    "locale": "en_US.utf8",
+    "ssh_username": "root",
+    "ssh_password": "vagrant",
+    "chroot": "/mnt/gentoo"
+  },
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "http/gentoo/{{user `stage3_file`}}",
+      "destination": "{{user `stage3_dest`}}"
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "TIMEZONE={{user `timezone`}}",
+        "SYNC_SERVER={{user `sync_server`}}",
+        "LOCALE={{user `locale`}}",
+        "CHROOT={{user `chroot`}}",
+        "PASSWORD={{user `ssh_password`}}",
+        "STAGE3_FILE={{user `stage3_dest`}}"
+      ],
+      "scripts": [
+        "scripts/gentoo/04_preparing_the_disks.sh",
+        "scripts/gentoo/05_installing_the_gentoo_installation_files.sh",
+        "scripts/gentoo/06_installing_the_gentoo_base_system.sh",
+        "scripts/gentoo/07_configuring_the_kernel.sh",
+        "scripts/gentoo/08_configuring_your_system.sh",
+        "scripts/gentoo/09_installing_necessary_system_tools.sh",
+        "scripts/gentoo/10_configuring_the_bootloader.sh"
+      ]
+    }
+  ],
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "name": "virtualbox-gentoo",
+      "boot_command": [
+        "gentoo-nofb<enter><wait10><wait10><wait10><enter><wait10><wait10>",
+        "passwd<enter><wait>",
+        "{{user `ssh_password`}}<enter><wait>",
+        "{{user `ssh_password`}}<enter><wait>",
+        "/etc/init.d/sshd start<enter><wait>"
+      ],
+      "guest_os_type": "{{user `guest_os_type`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "ssh_username": "{{user `ssh_username`}}",
+      "ssh_password": "{{user `ssh_password`}}",
+      "virtualbox_version_file": ".vbox_version",
+      "shutdown_command": "shutdown -hP now",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "1024"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "post-processors": [
+    "vagrant"
+  ]
+}
